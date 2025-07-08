@@ -29,7 +29,7 @@
       max-width: 90%;
       width: 400px;
       margin: 30px auto;
-      padding: 30px; /* increased padding slightly */
+      padding: 30px;
       border-radius: 10px;
       box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
     }
@@ -144,7 +144,7 @@
       color: white;
     }
 
-    /* ✅ New styles for board status boxes */
+    /* Board status boxes */
     #boardStatusContainer {
       margin-top: 10px;
     }
@@ -195,10 +195,10 @@
     <h1>Message via MQTT</h1>
     <div id="connectionStatus" class="disconnected">Disconnected</div>
 
-    <!-- ✅ New status boxes -->
+    <!-- Device status boxes -->
     <div id="boardStatusContainer">
-      <div id="boardWiFiStatus" class="status-box status-disconnected">Board WiFi Disconnected</div>
-      <div id="boardMQTTStatus" class="status-box status-disconnected">Board MQTT Disconnected</div>
+      <div id="boardWiFiStatus" class="status-box status-disconnected">Device WiFi Disconnected</div>
+      <div id="boardMQTTStatus" class="status-box status-disconnected">Device MQTT Disconnected</div>
     </div>
 
     <form id="mqttForm">
@@ -251,91 +251,61 @@
       }
     });
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registration successful');
-          })
-          .catch(err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-      });
-    }
-
-    const brokerConfigs = [
-      {
-        name: "Mosquitto",
-        wsUrl: "wss://test.mosquitto.org:8081/mqtt",
-        tcpUrl: "test.mosquitto.org",
-        tcpPort: 1883
-      }
-    ];
-
-    let currentBrokerIndex = 0;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 3;
-
-    const clientId = "webclient_" + Math.random().toString(16).substr(2, 8);
-    const commandTopic = "ece/diFJBNOUIFOVSKJIGWIGJ";
-    const sensorTopic = "ece/sensorDataujndubd";
+    const brokerConfigs = [{
+      name: "Mosquitto",
+      wsUrl: "wss://test.mosquitto.org:8081/mqtt",
+      tcpUrl: "test.mosquitto.org",
+      tcpPort: 1883
+    }];
 
     let client = null;
-    let currentBroker = null;
+    let currentBroker = brokerConfigs[0];
 
     function updateConnectionStatus(connected) {
       const statusElement = document.getElementById('connectionStatus');
-      statusElement.textContent = connected ?
-        `App Connected to MQTT' : 'Disconnected';
+      statusElement.textContent = connected ? "App Connected to MQTT" : "Disconnected";
       statusElement.className = connected ? 'connected' : 'disconnected';
     }
 
     function connectToBroker() {
-      currentBroker = brokerConfigs[currentBrokerIndex];
       updateConnectionStatus(false);
-
       if (client) client.end();
 
       client = mqtt.connect(currentBroker.wsUrl, {
-        clientId: clientId,
+        clientId: "webclient_" + Math.random().toString(16).substr(2, 8),
         clean: false,
         reconnectPeriod: 1000
       });
 
-      client.on('connect', function () {
+      client.on('connect', () => {
         updateConnectionStatus(true);
-        reconnectAttempts = 0;
-        client.subscribe(sensorTopic);
+        client.subscribe("ece/sensorDataujndubd");
       });
 
-      client.on('message', function (topic, message) {
-        if (topic === sensorTopic) {
-          const rawMessage = message.toString();
-          let data = {};
+      client.on('message', (topic, message) => {
+        if (topic === "ece/sensorDataujndubd") {
+          const raw = message.toString();
+          const parts = raw.split("|").map(p => p.trim());
 
-          if (rawMessage.includes("Temp:")) {
-            const parts = rawMessage.split("|").map(p => p.trim());
-            data.temperature = parseFloat(parts[0].split(":")[1]);
-            data.pressure = parseFloat(parts[1].split(":")[1]);
-            data.altitude = parseFloat(parts[2].split(":")[1]);
-            data.weather = parts[3];
+          const temp = parseFloat(parts[0]?.split(":")[1]);
+          const press = parseFloat(parts[1]?.split(":")[1]);
+          const alt = parseFloat(parts[2]?.split(":")[1]);
+          const weather = parts[3];
+          const wifiStatus = parts[4]?.includes("Connected");
+          const mqttStatus = parts[5]?.includes("Connected");
 
-            const wifiConnected = parts[4]?.includes("Connected");
-            const mqttConnected = parts[5]?.includes("Connected");
+          document.getElementById("temp").innerText = isNaN(temp) ? "--" : `${temp.toFixed(1)} °C`;
+          document.getElementById("pressure").innerText = isNaN(press) ? "--" : `${press.toFixed(1)} hPa`;
+          document.getElementById("altitude").innerText = isNaN(alt) ? "--" : `${alt.toFixed(1)} m`;
+          document.getElementById("weather").innerText = weather || "--";
 
-            document.getElementById('temp').innerText = data.temperature ? `${data.temperature.toFixed(1)} °C` : "--";
-            document.getElementById('pressure').innerText = data.pressure ? `${data.pressure.toFixed(1)} hPa` : "--";
-            document.getElementById('altitude').innerText = data.altitude ? `${data.altitude.toFixed(1)} m` : "--";
-            document.getElementById('weather').innerText = data.weather || "--";
+          const wifiBox = document.getElementById("boardWiFiStatus");
+          wifiBox.textContent = wifiStatus ? "Device WiFi Connected" : "Device WiFi Disconnected";
+          wifiBox.className = wifiStatus ? "status-box status-connected" : "status-box status-disconnected";
 
-            const wifiBox = document.getElementById('boardWiFiStatus');
-            wifiBox.textContent = wifiConnected ? "Board WiFi Connected" : "Board WiFi Disconnected";
-            wifiBox.className = wifiConnected ? "status-box status-connected" : "status-box status-disconnected";
-
-            const mqttBox = document.getElementById('boardMQTTStatus');
-            mqttBox.textContent = mqttConnected ? "Board MQTT Connected" : "Board MQTT Disconnected";
-            mqttBox.className = mqttConnected ? "status-box status-connected" : "status-box status-disconnected";
-          }
+          const mqttBox = document.getElementById("boardMQTTStatus");
+          mqttBox.textContent = mqttStatus ? "Device MQTT Connected" : "Device MQTT Disconnected";
+          mqttBox.className = mqttStatus ? "status-box status-connected" : "status-box status-disconnected";
         }
       });
 
@@ -347,26 +317,25 @@
 
     document.getElementById('mqttForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      const messageInput = document.getElementById('message');
-      const message = messageInput.value.trim();
+      const message = document.getElementById('message').value.trim();
       if (message && client && client.connected) {
-        client.publish(commandTopic, message);
-        messageInput.value = "";
-      } else {
-        alert("Not connected to MQTT broker.");
-      }
-    });
-
-    document.getElementById('clearButton').addEventListener('click', function () {
-      if (client && client.connected) {
-        client.publish(commandTopic, "CLE@R");
+        client.publish("ece/diFJBNOUIFOVSKJIGWIGJ", message);
         document.getElementById('message').value = "";
       } else {
         alert("Not connected to MQTT broker.");
       }
     });
 
-    document.getElementById('logoutButton').addEventListener('click', function () {
+    document.getElementById('clearButton').addEventListener('click', () => {
+      if (client && client.connected) {
+        client.publish("ece/diFJBNOUIFOVSKJIGWIGJ", "CLE@R");
+        document.getElementById('message').value = "";
+      } else {
+        alert("Not connected to MQTT broker.");
+      }
+    });
+
+    document.getElementById('logoutButton').addEventListener('click', () => {
       auth.signOut().then(() => window.location.href = 'index.html');
     });
   </script>

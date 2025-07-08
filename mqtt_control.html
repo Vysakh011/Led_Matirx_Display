@@ -286,7 +286,7 @@
     function updateConnectionStatus(connected) {
       const statusElement = document.getElementById('connectionStatus');
       statusElement.textContent = connected ?
-        `Connected to ${currentBroker.name}` : 'Disconnected';
+        `App Connected to MQTT' : 'Disconnected';
       statusElement.className = connected ? 'connected' : 'disconnected';
     }
 

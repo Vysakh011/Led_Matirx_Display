@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MQTT Control & Sensor Data</title>
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#6a11cb" />
@@ -29,16 +29,13 @@
       max-width: 90%;
       width: 400px;
       margin: 30px auto;
-      padding: 30px;
+      padding: 20px;
       border-radius: 10px;
       box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
     }
     h1 {
       font-size: 22px;
       margin-bottom: 10px;
-    }
-    label {
-      font-weight: bold;
     }
     #message {
       width: calc(100% - 20px);
@@ -101,8 +98,6 @@
       border-radius: 5px;
       border: none;
       cursor: pointer;
-      width: auto;
-      display: inline-block;
     }
     .logout-btn:hover {
       background: darkred;
@@ -144,30 +139,88 @@
       color: white;
     }
 
-    /* Board status boxes */
-    #boardStatusContainer {
-      margin-top: 10px;
-    }
-    .status-box {
-      margin: 5px 0;
-      padding: 5px;
-      border-radius: 5px;
-      font-weight: bold;
-    }
-    .status-connected {
-      background-color: #4CAF50;
-      color: white;
-    }
-    .status-disconnected {
-      background-color: #f44336;
-      color: white;
+    /* 🔘 Dark mode switch in corner */
+    .dark-toggle {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 999;
     }
 
-    #installBtn {
-      display: none;
-      background: #4CAF50;
-      margin: 10px 0;
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
     }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #6a11cb;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    /* 🌙 Dark Mode Styles */
+    body.dark-mode {
+      background: linear-gradient(to right, #000000, #2c3e50);
+      color: white;
+    }
+    body.dark-mode .container {
+      background: #1e1e1e;
+      color: white;
+    }
+    body.dark-mode input,
+    body.dark-mode textarea {
+      background: #2c2c2c;
+      color: white;
+      border-color: #444;
+    }
+    body.dark-mode table,
+    body.dark-mode th,
+    body.dark-mode td {
+      background: #2a2a2a;
+      color: white;
+      border-color: #444;
+    }
+    body.dark-mode .history-item {
+      background: #2e2e2e;
+    }
+    body.dark-mode .logout-btn {
+      background: #8e44ad;
+    }
+
     @media (max-width: 600px) {
       .container {
         max-width: 95%;
@@ -191,19 +244,21 @@
   </style>
 </head>
 <body>
+
+  <!-- 🔘 Dark Mode Toggle -->
+  <div class="dark-toggle">
+    <label class="switch">
+      <input type="checkbox" id="darkModeToggle" />
+      <span class="slider round"></span>
+    </label>
+  </div>
+
   <div class="container">
     <h1>Message via MQTT</h1>
     <div id="connectionStatus" class="disconnected">Disconnected</div>
 
-    <!-- Device status boxes -->
-    <div id="boardStatusContainer">
-      <div id="boardWiFiStatus" class="status-box status-disconnected">Device WiFi Disconnected</div>
-      <div id="boardMQTTStatus" class="status-box status-disconnected">Device MQTT Disconnected</div>
-    </div>
-
     <form id="mqttForm">
-      <label for="message">Enter Message:</label>
-      <input type="text" id="message" name="message" required />
+      <input type="text" id="message" name="message" placeholder="Enter Message" required />
       <button type="submit" id="sendButton">Send Message</button>
     </form>
 
@@ -233,6 +288,7 @@
   <button id="logoutButton" class="logout-btn">Logout</button>
 
   <script>
+    // 🔐 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyAlzO4KX4TiF3sT9OdwC4iO1XyNlqMEJKA",
       authDomain: "notice-board-a831b.firebaseapp.com",
@@ -246,97 +302,88 @@
     const auth = firebase.auth();
 
     auth.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.href = 'index.html';
-      }
+      if (!user) window.location.href = 'index.html';
     });
 
-    const brokerConfigs = [{
-      name: "Mosquitto",
-      wsUrl: "wss://test.mosquitto.org:8081/mqtt",
-      tcpUrl: "test.mosquitto.org",
-      tcpPort: 1883
-    }];
+    const clientId = "webclient_" + Math.random().toString(16).substr(2, 8);
+    const sensorTopic = "ece/sensorDataujndubd";
+    const commandTopic = "ece/diFJBNOUIFOVSKJIGWIGJ";
 
-    let client = null;
-    let currentBroker = brokerConfigs[0];
+    const client = mqtt.connect("wss://test.mosquitto.org:8081/mqtt", {
+      clientId: clientId,
+      clean: false,
+      reconnectPeriod: 1000
+    });
 
-    function updateConnectionStatus(connected) {
-      const statusElement = document.getElementById('connectionStatus');
-      statusElement.textContent = connected ? "App Connected to MQTT" : "Disconnected";
-      statusElement.className = connected ? 'connected' : 'disconnected';
-    }
+    client.on("connect", () => {
+      console.log("Connected");
+      client.subscribe(sensorTopic);
+      document.getElementById("connectionStatus").textContent = "App connected to MQTT";
+      document.getElementById("connectionStatus").className = "connected";
+    });
 
-    function connectToBroker() {
-      updateConnectionStatus(false);
-      if (client) client.end();
-
-      client = mqtt.connect(currentBroker.wsUrl, {
-        clientId: "webclient_" + Math.random().toString(16).substr(2, 8),
-        clean: false,
-        reconnectPeriod: 1000
-      });
-
-      client.on('connect', () => {
-        updateConnectionStatus(true);
-        client.subscribe("ece/sensorDataujndubd");
-      });
-
-      client.on('message', (topic, message) => {
-        if (topic === "ece/sensorDataujndubd") {
-          const raw = message.toString();
-          const parts = raw.split("|").map(p => p.trim());
-
-          const temp = parseFloat(parts[0]?.split(":")[1]);
-          const press = parseFloat(parts[1]?.split(":")[1]);
-          const alt = parseFloat(parts[2]?.split(":")[1]);
-          const weather = parts[3];
-          const wifiStatus = parts[4]?.includes("Connected");
-          const mqttStatus = parts[5]?.includes("Connected");
-
-          document.getElementById("temp").innerText = isNaN(temp) ? "--" : `${temp.toFixed(1)} °C`;
-          document.getElementById("pressure").innerText = isNaN(press) ? "--" : `${press.toFixed(1)} hPa`;
-          document.getElementById("altitude").innerText = isNaN(alt) ? "--" : `${alt.toFixed(1)} m`;
-          document.getElementById("weather").innerText = weather || "--";
-
-          const wifiBox = document.getElementById("boardWiFiStatus");
-          wifiBox.textContent = wifiStatus ? "Device WiFi Connected" : "Device WiFi Disconnected";
-          wifiBox.className = wifiStatus ? "status-box status-connected" : "status-box status-disconnected";
-
-          const mqttBox = document.getElementById("boardMQTTStatus");
-          mqttBox.textContent = mqttStatus ? "Device MQTT Connected" : "Device MQTT Disconnected";
-          mqttBox.className = mqttStatus ? "status-box status-connected" : "status-box status-disconnected";
+    client.on("message", (topic, message) => {
+      if (topic === sensorTopic) {
+        try {
+          const data = JSON.parse(message.toString());
+          document.getElementById("temp").textContent = data.temperature || "--";
+          document.getElementById("pressure").textContent = data.pressure || "--";
+          document.getElementById("altitude").textContent = data.altitude || "--";
+          document.getElementById("weather").textContent = data.weather || "--";
+        } catch (e) {
+          console.error("Invalid data:", e);
         }
-      });
+      }
+    });
 
-      client.on('close', () => updateConnectionStatus(false));
-      client.on('offline', () => updateConnectionStatus(false));
+    document.getElementById("mqttForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const message = document.getElementById("message").value.trim();
+      if (message && client.connected) {
+        client.publish(commandTopic, message);
+        addToHistory(message);
+        document.getElementById("message").value = "";
+      }
+    });
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+      if (client.connected) {
+        client.publish(commandTopic, "CLE@R");
+        addToHistory("CLEAR (Display Reset)");
+      }
+    });
+
+    function addToHistory(msg) {
+      const container = document.getElementById("messageHistory");
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement("div");
+      div.className = "history-item";
+      div.innerHTML = `<strong>[${time}]</strong> ${msg}`;
+      container.appendChild(div);
     }
 
-    connectToBroker();
-
-    document.getElementById('mqttForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      const message = document.getElementById('message').value.trim();
-      if (message && client && client.connected) {
-        client.publish("ece/diFJBNOUIFOVSKJIGWIGJ", message);
-        document.getElementById('message').value = "";
-      } else {
-        alert("Not connected to MQTT broker.");
-      }
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      auth.signOut().then(() => {
+        window.location.href = 'index.html';
+      });
     });
 
-    document.getElementById('clearButton').addEventListener('click', () => {
-      if (client && client.connected) {
-        client.publish("ece/diFJBNOUIFOVSKJIGWIGJ", "CLE@R");
-        document.getElementById('message').value = "";
-      } else {
-        alert("Not connected to MQTT broker.");
-      }
-    });
+    // 🌗 Dark Mode Toggle
+    const toggle = document.getElementById("darkModeToggle");
+    const prefersDark = localStorage.getItem("darkMode") === "true";
+    if (prefersDark) {
+      document.body.classList.add("dark-mode");
+      toggle.checked = true;
+    }
 
-    document.getElementById('logoutButton').addEventListener('click', () => {
-      auth.signOut().then(() => window.location.href = 'index.html');
+    toggle.addEventListener("change", () => {
+      if (toggle.checked) {
+        document.body.classList.add("dark-mode");
+        localStorage.setItem("darkMode", "true");
+      } else {
+        document.body.classList.remove("dark-mode");
+        localStorage.setItem("darkMode", "false");
+      }
     });
   </script>
 </body>

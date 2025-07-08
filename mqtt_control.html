@@ -22,14 +22,7 @@
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
-      transition: background 0.3s, color 0.3s;
     }
-
-    .dark-mode body {
-      background: #121212;
-      color: white;
-    }
-
     .container {
       background: white;
       color: black;
@@ -39,23 +32,14 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-      transition: background 0.3s, color 0.3s;
     }
-
-    .dark-mode .container {
-      background: #1e1e1e;
-      color: white;
-    }
-
     h1 {
       font-size: 22px;
       margin-bottom: 10px;
     }
-
     label {
       font-weight: bold;
     }
-
     #message {
       width: calc(100% - 20px);
       padding: 10px;
@@ -65,7 +49,6 @@
       text-align: center;
       font-size: 16px;
     }
-
     button {
       width: 100%;
       padding: 10px;
@@ -75,51 +58,38 @@
       border-radius: 5px;
       font-size: 16px;
     }
-
     #sendButton {
       background: #3b82f6;
       color: white;
     }
-
     #sendButton:hover {
       background: #2563eb;
     }
-
     #clearButton {
       background: #f44336;
       color: white;
     }
-
     #clearButton:hover {
       background: #d32f2f;
     }
-
     table {
       width: 100%;
       margin-top: 20px;
       border-collapse: collapse;
     }
-
     table, th, td {
       border: 1px solid #ddd;
     }
-
     th {
       background: #3b82f6;
       color: white;
       padding: 10px;
     }
-
     td {
       padding: 10px;
       text-align: center;
       background: #f9f9f9;
     }
-
-    .dark-mode td {
-      background: #2a2a2a;
-    }
-
     .logout-btn {
       background: red;
       color: white;
@@ -134,11 +104,9 @@
       width: auto;
       display: inline-block;
     }
-
     .logout-btn:hover {
       background: darkred;
     }
-
     #messageHistory {
       margin-top: 20px;
       max-height: 200px;
@@ -149,39 +117,28 @@
       background: #f9f9f9;
       color: black;
     }
-
-    .dark-mode #messageHistory {
-      background: #2a2a2a;
-      color: white;
-    }
-
     #messageHistory h3 {
       margin-top: 0;
       color: #3b82f6;
     }
-
     .history-item {
       padding: 5px;
       border-bottom: 1px solid #eee;
       text-align: left;
     }
-
     .history-item:last-child {
       border-bottom: none;
     }
-
     #connectionStatus {
       margin-top: 10px;
       padding: 5px;
       border-radius: 5px;
       font-weight: bold;
     }
-
     .connected {
       background-color: #4CAF50;
       color: white;
     }
-
     .disconnected {
       background-color: #f44336;
       color: white;
@@ -191,19 +148,16 @@
     #boardStatusContainer {
       margin-top: 10px;
     }
-
     .status-box {
       margin: 5px 0;
       padding: 5px;
       border-radius: 5px;
       font-weight: bold;
     }
-
     .status-connected {
       background-color: #4CAF50;
       color: white;
     }
-
     .status-disconnected {
       background-color: #f44336;
       color: white;
@@ -214,31 +168,19 @@
       background: #4CAF50;
       margin: 10px 0;
     }
-
-    /* Dark mode toggle */
-    .dark-toggle {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-    }
-
     @media (max-width: 600px) {
       .container {
         max-width: 95%;
         width: auto;
         padding: 15px;
       }
-
       h1 {
         font-size: 20px;
       }
-
       button {
         font-size: 14px;
         padding: 8px;
       }
-
       .logout-btn {
         font-size: 12px;
         padding: 8px 12px;
@@ -249,13 +191,6 @@
   </style>
 </head>
 <body>
-  <div class="dark-toggle">
-    <label>
-      <input type="checkbox" id="darkModeSwitch" />
-      🌗
-    </label>
-  </div>
-
   <div class="container">
     <h1>Message via MQTT</h1>
     <div id="connectionStatus" class="disconnected">Disconnected</div>
@@ -298,12 +233,6 @@
   <button id="logoutButton" class="logout-btn">Logout</button>
 
   <script>
-    // Dark mode switch
-    const toggle = document.getElementById('darkModeSwitch');
-    toggle.addEventListener('change', function () {
-      document.documentElement.classList.toggle('dark-mode', this.checked);
-    });
-
     const firebaseConfig = {
       apiKey: "AIzaSyAlzO4KX4TiF3sT9OdwC4iO1XyNlqMEJKA",
       authDomain: "notice-board-a831b.firebaseapp.com",
@@ -313,7 +242,6 @@
       appId: "1:879522552762:web:89f0f4811411582c0f9b83",
       measurementId: "G-VRPVZK06P1"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 

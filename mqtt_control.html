@@ -1,4 +1,4 @@
-<!-- FULL CODE FROM YOUR LAST MESSAGE with dual-broker support and last message fix -->
+<!-- FULL CODE  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,8 +15,178 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
-    /* Your full style remains unchanged */
-    /* ... [STYLES OMITTED FOR BREVITY] ... */
+    /* [ALL YOUR ORIGINAL STYLES — UNCHANGED] */
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container {
+      background: white;
+      color: black;
+      max-width: 90%;
+      width: 400px;
+      margin: 30px auto;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    label {
+      font-weight: bold;
+    }
+    #message {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-top: 10px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      text-align: center;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    #sendButton {
+      background: #3b82f6;
+      color: white;
+    }
+    #sendButton:hover {
+      background: #2563eb;
+    }
+    #clearButton {
+      background: #f44336;
+      color: white;
+    }
+    #clearButton:hover {
+      background: #d32f2f;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th {
+      background: #3b82f6;
+      color: white;
+      padding: 10px;
+    }
+    td {
+      padding: 10px;
+      text-align: center;
+      background: #f9f9f9;
+    }
+    .logout-btn {
+      background: red;
+      color: white;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 14px;
+      padding: 8px 15px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      width: auto;
+      display: inline-block;
+    }
+    .logout-btn:hover {
+      background: darkred;
+    }
+    #messageHistory {
+      margin-top: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      background: #f9f9f9;
+      color: black;
+    }
+    #messageHistory h3 {
+      margin-top: 0;
+      color: #3b82f6;
+    }
+    .history-item {
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    #connectionStatus {
+      margin-top: 10px;
+      padding: 5px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .connected {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .disconnected {
+      background-color: #f44336;
+      color: white;
+    }
+    #boardStatusContainer {
+      margin-top: 10px;
+    }
+    .status-box {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .status-connected {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .status-disconnected {
+      background-color: #f44336;
+      color: white;
+    }
+    #installBtn {
+      display: none;
+      background: #4CAF50;
+      margin: 10px 0;
+    }
+    @media (max-width: 600px) {
+      .container {
+        max-width: 95%;
+        width: auto;
+        padding: 15px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      button {
+        font-size: 14px;
+        padding: 8px;
+      }
+      .logout-btn {
+        font-size: 12px;
+        padding: 8px 12px;
+        bottom: 15px;
+        right: 15px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -117,10 +287,7 @@
           lastSensorMessageTime = Date.now();
           currentActiveBroker = brokerName;
 
-          const raw = message.toString();
-          const parts = raw.split("|").map(p => p.trim());
-          if (parts.length < 4) return;
-
+          const parts = message.toString().split("|").map(p => p.trim());
           const temp = parseFloat(parts[0]?.split(":")[1]);
           const press = parseFloat(parts[1]?.split(":")[1]);
           const alt = parseFloat(parts[2]?.split(":")[1]);
@@ -133,11 +300,13 @@
           document.getElementById("altitude").innerText = isNaN(alt) ? "--" : `${alt.toFixed(1)} m`;
           document.getElementById("weather").innerText = weather || "--";
 
-          document.getElementById("boardWiFiStatus").textContent = wifiStatus ? "Device WiFi Connected" : "Device WiFi Disconnected";
-          document.getElementById("boardWiFiStatus").className = wifiStatus ? "status-box status-connected" : "status-box status-disconnected";
+          const wifiBox = document.getElementById("boardWiFiStatus");
+          wifiBox.textContent = wifiStatus ? "Device WiFi Connected" : "Device WiFi Disconnected";
+          wifiBox.className = wifiStatus ? "status-box status-connected" : "status-box status-disconnected";
 
-          document.getElementById("boardMQTTStatus").textContent = mqttStatus ? "Device MQTT Connected" : "Device MQTT Disconnected";
-          document.getElementById("boardMQTTStatus").className = mqttStatus ? "status-box status-connected" : "status-box status-disconnected";
+          const mqttBox = document.getElementById("boardMQTTStatus");
+          mqttBox.textContent = mqttStatus ? "Device MQTT Connected" : "Device MQTT Disconnected";
+          mqttBox.className = mqttStatus ? "status-box status-connected" : "status-box status-disconnected";
 
           updateConnectionStatus(true);
         });

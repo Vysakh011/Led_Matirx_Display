@@ -152,8 +152,10 @@
     const db = firebase.firestore();
 
     function checkAllowed(email) {
-      return db.collection("allowedEmails").where("email", "==", email).get()
-        .then(snapshot => !snapshot.empty);
+      return db.collection("allowedEmails")
+        .doc(email)
+        .get()
+        .then(doc => doc.exists);
     }
 
     function login() {

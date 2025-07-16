@@ -30,6 +30,7 @@
       margin: 0;
       -webkit-tap-highlight-color: transparent;
     }
+
     .login-container {
       background: white;
       padding: 20px;
@@ -39,10 +40,12 @@
       width: 300px;
       margin: 20px;
     }
+
     h2 {
       margin-bottom: 20px;
       color: #333;
     }
+
     input {
       width: 90%;
       padding: 10px;
@@ -52,6 +55,7 @@
       outline: none;
       font-size: 16px;
     }
+
     button {
       background: #667eea;
       color: white;
@@ -62,26 +66,32 @@
       cursor: pointer;
       font-size: 16px;
     }
+
     button:hover {
       background: #5a67d8;
     }
+
     p {
       margin-top: 10px;
       color: #555;
     }
+
     a {
       color: #667eea;
       text-decoration: none;
       font-weight: bold;
     }
+
     a:hover {
       text-decoration: underline;
     }
+
     #installBtn {
       display: none;
       background: #4CAF50;
       margin-top: 10px;
     }
+
     .google-btn {
       background: #4285F4;
       color: white;
@@ -96,9 +106,11 @@
       align-items: center;
       justify-content: center;
     }
+
     .google-btn:hover {
       background: #357ABD;
     }
+
     .google-icon {
       display: inline-block;
       width: 18px;
@@ -113,12 +125,14 @@
       line-height: 18px;
       font-size: 14px;
     }
+
     .or-divider {
       margin: 15px 0;
       text-align: center;
       position: relative;
       color: #777;
     }
+
     .or-divider::before,
     .or-divider::after {
       content: "";
@@ -128,14 +142,17 @@
       height: 1px;
       background: #ddd;
     }
+
     .or-divider::before {
       left: 0;
     }
+
     .or-divider::after {
       right: 0;
     }
   </style>
 
+  <!-- Firebase Logic -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAlzO4KX4TiF3sT9OdwC4iO1XyNlqMEJKA",
@@ -155,7 +172,10 @@
       return db.collection("allowedEmails")
         .doc(email)
         .get()
-        .then(doc => doc.exists);
+        .then(doc => {
+          console.log("Checking email:", email, "Exists:", doc.exists);
+          return doc.exists;
+        });
     }
 
     function login() {
@@ -215,12 +235,16 @@
     <input type="email" id="username" placeholder="Email" required />
     <input type="password" id="password" placeholder="Password" required />
     <button onclick="login()">Login</button>
+
     <div class="or-divider">OR</div>
+
     <button class="google-btn" onclick="googleSignIn()">
       <span class="google-icon">G</span>
       Sign in with Google
     </button>
+
     <button id="installBtn">Install App</button>
+
     <p>Don't have an account? <a href="register.html">Register</a></p>
   </div>
 
@@ -228,12 +252,8 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registered');
-          })
-          .catch(err => {
-            console.error('ServiceWorker registration failed:', err);
-          });
+          .then(() => console.log('ServiceWorker registered'))
+          .catch(err => console.error('ServiceWorker registration failed:', err));
       });
     }
 

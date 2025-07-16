@@ -243,10 +243,22 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
+    const allowedEmails = [
+      "vysakhvmallayya@gmail.com",
+      "vysakhvmallayyacloud05@gmail.com"
+      // Add more allowed emails here
+      ];
     auth.onAuthStateChanged((user) => {
-      if (!user) window.location.href = 'index.html';
+      if (!user) {
+        // Not logged in
+        window.location.href = 'index.html';
+      } else if (!allowedEmails.includes(user.email)) {
+        // Logged in but not allowed
+        alert("Unauthorized access. You will be logged out.");
+        auth.signOut().then(() => window.location.href = 'index.html');
+      }
     });
-
+    
     const brokerConfigs = {
       "Mosquitto": { name: "Mosquitto", wsUrl: "wss://test.mosquitto.org:8081/mqtt" },
       "HiveMQ": { name: "HiveMQ", wsUrl: "wss://broker.hivemq.com:8884/mqtt" }
